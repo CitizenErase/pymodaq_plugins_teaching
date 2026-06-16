@@ -6,17 +6,7 @@ from pymodaq.control_modules.move_utility_classes import (DAQ_Move_base, comon_p
 from pymodaq_utils.utils import ThreadCommand  # object used to send info back to the main thread
 from pymodaq_gui.parameter import Parameter
 
-#  TODO:
-#  Replace the following fake import with the import of the real Python wrapper of your instrument. Here we suppose that
-#  the wrapper is in the hardware directory, but it could come from an external librairy like pylablib or pymeasure.
-from pymodaq_plugins_template.hardware.python_wrapper_file_of_your_instrument import PythonWrapperObjectOfYourInstrument
-
-# TODO:
-# (1) change the name of the following class to DAQ_Move_TheNameOfYourChoice
-# (2) change the name of this file to daq_move_TheNameOfYourChoice ("TheNameOfYourChoice" should be the SAME
-#     for the class name and the file name.)
-# (3) this file should then be put into the right folder, namely IN THE FOLDER OF THE PLUGIN YOU ARE DEVELOPING:
-#     pymodaq_plugins_my_plugin/daq_move_plugins
+from pymodaq_plugins_teaching.hardware.spectrometer import Spectrometer
 
 
 class DAQ_Move_Monochromator(DAQ_Move_base):
@@ -43,10 +33,8 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
     """
     is_multiaxes = False  # TODO for your plugin set to True if this plugin is controlled for a multiaxis controller
     _axis_names: Union[List[str], Dict[str, int]] = ['Axis1', 'Axis2']  # TODO for your plugin: complete the list
-    _controller_units: Union[str, List[str]] = 'mm'  # TODO for your plugin: put the correct unit here, it could be
-    # TODO  a single str (the same one is applied to all axes) or a list of str (as much as the number of axes)
-    _epsilon: Union[float, List[float]] = 0.1  # TODO replace this by a value that is correct depending on your controller
-    # TODO it could be a single float of a list of float (as much as the number of axes)
+    _controller_units: Union[str, List[str]] = 'nm'
+    _epsilon: Union[float, List[float]] = 0.1 
     data_actuator_type = DataActuatorType.DataActuator  # wether you use the new data style for actuator otherwise set this
     # as  DataActuatorType.float  (or entirely remove the line)
 
