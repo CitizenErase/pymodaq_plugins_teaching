@@ -35,8 +35,8 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
     _epsilon: Union[float, List[float]] = 0.1
     data_actuator_type = DataActuatorType.DataActuator
 
-    params = [{'title': 'Grating:', 'name': 'grating', 'type': 'list', 'limits': self.controller.gratings},
-                 {'title': 'Tau:', 'name': 'tau', 'type': 'float', 'limits': (0,1000)},
+    params = [{'title': 'Grating:', 'name': 'grating', 'type': 'list', 'limits': []},
+              {'title': 'Tau:', 'name': 'tau', 'type': 'float', 'value': 0, 'limits': [0,1000]},
                 ] + comon_parameters_fun(is_multiaxes, axis_names=_axis_names, epsilon=_epsilon)
 
     def ini_attributes(self):
@@ -84,12 +84,15 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
             A given parameter (within detector_settings) whose value has been changed by the user
         """
 
+
         if param.name() == "grating":
-           self.controller.grating(param.value())
-        elif param.name() == "tau":
-            self.controller.tau(param.value())
+           self.controller.grating = param.value()
+        if param.name() == "tau":
+            self.controller.tau = int(param.value())
         else:
             pass
+
+
 
     def ini_stage(self, controller=None):
         """Actuator communication initialization
@@ -113,6 +116,11 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
         else:
             self.controller = controller
             initialized = True
+
+
+        self.settings.child('grating').setLimits(self.controller.gratings)
+        self.settings.child('grating').setValue(self.controller.grating)
+        self.settings.child('tau').setValue(self.controller.tau)
 
         info = "yayyyyyy"
         return info, initialized
@@ -155,10 +163,8 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
     def stop_motion(self):
         """Stop the actuator and emits move_done signal"""
 
-        ## TODO for your custom plugin
-        raise NotImplementedError  # when writing your own plugin remove this line
-        self.controller.your_method_to_stop_positioning()  # when writing your own plugin replace this line
-        self.emit_status(ThreadCommand('Update_Status', ['Some info you want to log']))
+        self.controller.stop()  # when writing your own plugin replace this line
+        self.emit_status(ThreadCommand('Update_Status', ['Oh no I\'ve stopped!!']))
 
 
 if __name__ == '__main__':
