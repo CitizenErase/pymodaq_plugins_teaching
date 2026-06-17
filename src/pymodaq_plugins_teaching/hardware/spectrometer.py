@@ -14,7 +14,7 @@ class Spectrometer:
 
     Allows to change the used grating, to move the grating by setting the central wavelength and get the data out of it
     """
-    gratings = ['G300', 'G1200']
+    gratings = ['G300', 'G1200', 'G3600']
 
     Nx = 256
     infos = 'Spectrometer Controller Wrapper 0.1.0'
@@ -25,7 +25,7 @@ class Spectrometer:
         self._amp = 10
         self._noise = 0.5
         self._wh = 2
-        self._grating = self.gratings[0]
+        self._grating = self.gratings[2]
 
         self._tau = 2  # s
         self._alpha = None
@@ -34,10 +34,10 @@ class Spectrometer:
         self._moving = False
         self._espilon = 0.01
 
-        self._lambda = 532
+        self._lambda = 215
         self._target_lambda = self._lambda
 
-        self._lambda0 = 528
+        self._lambda0 = 214
 
     def open_communication(self):
         return True
@@ -151,6 +151,8 @@ class Spectrometer:
             coeff = 0.7
         elif self._grating == 'G1200':
             coeff = 0.25
+        elif self._grating == 'G3600':
+            coeff = 0.07
         return (np.linspace(0, self.Nx, self.Nx, endpoint=False) - self.Nx / 2) * coeff + self._lambda
 
     @property
@@ -184,10 +186,17 @@ class Spectrometer:
             else:
                 if not isinstance(lambda_axis[0], Number):
                     raise TypeError('lambda_axis should be an iterable of float')
+        scal = 1
+        intrinsic_rBN = (
 
-        return (self._amp * gauss1D(lambda_axis, self._lambda0, self._wh * (1 + self._amp/10))
-                * (1+0.5 * np.sin(self._amp/10) * np.sin((lambda_axis-self._lambda0) / (self._wh)))
+                self._amp * (
+                0.9 * gauss1D(lambda_axis, self._lambda0 + scal * 1.12, self._wh * 0.5)
+                + 1.4 * gauss1D(lambda_axis, self._lambda0, self._wh * 0.5)
+                + 0.24 * gauss1D(lambda_axis, self._lambda0 - scal * 2.20, self._wh * 0.5)
+                + 0.18 * gauss1D(lambda_axis, self._lambda0 - scal * 3.28, self._wh * 0.5)
+                + 0.08 * gauss1D(lambda_axis, self._lambda0 - scal * 4.35, self._wh * 0.5))
                 + self._noise * np.random.rand(len(lambda_axis)))
+        return intrinsic_rBN
 
     def _get_data_0D(self, data=None):
         """Get the data at the central wavelength of the spectrometer"""
@@ -211,6 +220,9 @@ class Spectrometer:
         data1D = self._get_data_1D()
         data2D = np.outer(gauss1D(y_axis_array, np.mean(y_axis_array), 50), data1D)
         return data2D
+
+    def get_image_axis(self):
+        return np.linspace(0, 127, 128)
 
     def grab_monochromator(self):
         """get the intensity at the central wavelength"""

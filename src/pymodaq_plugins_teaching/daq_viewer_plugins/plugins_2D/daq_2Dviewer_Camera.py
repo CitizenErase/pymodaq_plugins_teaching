@@ -10,13 +10,13 @@ from pymodaq.utils.data import DataFromPlugins
 from pymodaq_plugins_teaching.hardware.spectrometer import Spectrometer
 
 
-class DAQ_1DViewer_Spectro(DAQ_Viewer_base):
-    """ Instrument plugin class for a 1D viewer.
+class DAQ_2DViewer_Camera(DAQ_Viewer_base):
+    """ Instrument plugin class for a 2D viewer.
     
     This object inherits all functionalities to communicate with PyMoDAQ’s DAQ_Viewer module through inheritance via
     DAQ_Viewer_base. It makes a bridge between the DAQ_Viewer module and the Python wrapper of a particular instrument.
 
-    coucou
+    blam
 
     Attributes:
     -----------
@@ -25,18 +25,20 @@ class DAQ_1DViewer_Spectro(DAQ_Viewer_base):
          hardware library.
 
     """
-    params = comon_parameters+[
+    params = comon_parameters + [
         {'title': 'Position:', 'name': 'pos', 'type': 'float', 'value': 0},
         {'title': 'Amplitude:', 'name': 'amp', 'type': 'float', 'value': 0},
         {'title': 'Linewidth:', 'name': 'lw', 'type': 'float', 'value': 0},
         {'title': 'Noise:', 'name': 'noise', 'type': 'float', 'value': 0},
         {'title': 'Update settings:', 'name': 'update', 'value': False,
               'label': 'Update!'},
-        ]
+    ]
 
     def ini_attributes(self):
         self.controller: Spectrometer = None
+
         self.x_axis = None
+        self.y_axis = None
 
     def commit_settings(self, param: Parameter):
         """Apply the consequences of a change of value in the detector settings
@@ -77,7 +79,6 @@ class DAQ_1DViewer_Spectro(DAQ_Viewer_base):
         initialized: bool
             False if initialization failed otherwise True
         """
-
         if self.is_master:
             self.controller = Spectrometer()
             initialized = self.controller.open_communication()
@@ -92,16 +93,18 @@ class DAQ_1DViewer_Spectro(DAQ_Viewer_base):
 
         # get the x_axis
         data_x_axis = self.controller.get_wavelength_axis()
-        self.x_axis = Axis(data=data_x_axis, label='Wavelength', units='nm', index=0)
+        self.x_axis = Axis(data=data_x_axis, label='Wavelength', units='nm', index=1)
 
-        self.dte_signal_temp.emit(DataToExport(name='Spectro',
-                                               data=[DataFromPlugins(name='Spectrum',
-                                                                     data=[np.array([0., 0.]),
-                                                                           np.array([0., 0.])],
-                                                                     dim='Data1D', labels=['Positive', 'Negative'],
-                                                                     axes=[self.x_axis])]))
+        # get the y_axis
+        data_y_axis = self.controller.get_image_axis()
+        self.y_axis = Axis(data=data_y_axis, label='Position', units='', index=0)
 
-        info = "Hihi"
+        self.dte_signal_temp.emit(DataToExport('Camera',
+                                               data=[DataFromPlugins(name='Image', data=[np.zeros((128, 256))],
+                                                                     dim='Data2D', labels=['Data'],
+                                                                     axes=[self.y_axis, self.x_axis]),]))
+
+        info = "hello"
         return info, initialized
 
     def close(self):
@@ -121,19 +124,20 @@ class DAQ_1DViewer_Spectro(DAQ_Viewer_base):
             others optionals arguments
         """
 
-        ##synchrone version (blocking function)
-        data_x_axis = self.controller.get_wavelength_axis()  # if possible
-        self.x_axis = Axis(data=data_x_axis, label='Wavelength', units='nm', index=0)
+        # get the x_axis
+        data_x_axis = self.controller.get_wavelength_axis()
+        self.x_axis = Axis(data=data_x_axis, label='Wavelength', units='nm', index=1)
 
-        data_tot = self.controller.grab_spectrum()
-        self.dte_signal.emit(DataToExport('Spectro',
-                                          data=[DataFromPlugins(name='Spectrum', data=[data_tot],
-                                                                dim='Data1D', labels=['Data'],
-                                                                axes=[self.x_axis])]))
+        ##synchrone version (blocking function)
+        data_tot = self.controller.grab_image()
+        self.dte_signal.emit(DataToExport('Camera',
+                                          data=[DataFromPlugins(name='Image', data=[data_tot],
+                                                                dim='Data2D', labels=['Data'],
+                                                                axes=[self.y_axis, self.x_axis] )]))
 
     def stop(self):
         """Stop the current grab hardware wise if necessary"""
-        self.emit_status(ThreadCommand('Update_Status', ['arrete']))
+        self.emit_status(ThreadCommand('Update_Status', ['ok']))
         return ''
 
 

@@ -30,7 +30,7 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
     _epsilon: Union[float, List[float]] = 0.1
     data_actuator_type = DataActuatorType.DataActuator
 
-    params = [{'title': 'Grating:', 'name': 'grating', 'type': 'list', 'limits': []},
+    params = [{'title': 'Grating:', 'name': 'grating', 'type': 'list', 'limits': Spectrometer.gratings},
               {'title': 'Tau:', 'name': 'tau', 'type': 'float', 'value': 0, 'limits': [0,1000]},
              ] + comon_parameters_fun(is_multiaxes, axis_names=_axis_names, epsilon=_epsilon)
 
@@ -79,7 +79,6 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
             A given parameter (within detector_settings) whose value has been changed by the user
         """
 
-
         if param.name() == "grating":
            self.controller.grating = param.value()
         if param.name() == "tau":
@@ -112,8 +111,6 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
             self.controller = controller
             initialized = True
 
-
-        self.settings.child('grating').setLimits(self.controller.gratings)
         self.settings.child('grating').setValue(self.controller.grating)
         self.settings.child('tau').setValue(self.controller.tau)
 
