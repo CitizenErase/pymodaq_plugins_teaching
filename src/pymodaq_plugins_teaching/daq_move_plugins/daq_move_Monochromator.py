@@ -32,7 +32,7 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
 
     params = [{'title': 'Grating:', 'name': 'grating', 'type': 'list', 'limits': []},
               {'title': 'Tau:', 'name': 'tau', 'type': 'float', 'value': 0, 'limits': [0,1000]},
-                ] + comon_parameters_fun(is_multiaxes, axis_names=_axis_names, epsilon=_epsilon)
+             ] + comon_parameters_fun(is_multiaxes, axis_names=_axis_names, epsilon=_epsilon)
 
     def ini_attributes(self):
         self.controller: Spectrometer = None

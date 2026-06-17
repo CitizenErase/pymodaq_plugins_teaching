@@ -26,15 +26,14 @@ class DAQ_0DViewer_Photodiode(DAQ_Viewer_base):
 
     """
     params = comon_parameters+[
-        ## TODO for your custom plugin: elements to be added here as dicts in order to control your custom stage
+        {'title': 'Position:', 'name': 'pos', 'type': 'float', 'value': 0},
+        {'title': 'Amplitude:', 'name': 'amp', 'type': 'float', 'value': 0},
+        {'title': 'Linewidth:', 'name': 'lw', 'type': 'float', 'value': 0},
+        {'title': 'Noise:', 'name': 'noise', 'type': 'float', 'value': 0},
         ]
 
     def ini_attributes(self):
-        #  TODO declare the type of the wrapper (and assign it to self.controller) you're going to use for easy
-        #  autocompletion
-        self.controller: PythonWrapperObjectOfYourInstrument = None
-
-        #TODO declare here attributes you want/need to init with a default value
+        self.controller: Spectrometer = None
         pass
 
     def commit_settings(self, param: Parameter):
@@ -45,11 +44,16 @@ class DAQ_0DViewer_Photodiode(DAQ_Viewer_base):
         param: Parameter
             A given parameter (within detector_settings) whose value has been changed by the user
         """
-        ## TODO for your custom plugin
-        if param.name() == "a_parameter_you've_added_in_self.params":
-           self.controller.your_method_to_apply_this_param_change()  # when writing your own plugin replace this line
-#        elif ...
-        ##
+        if param.name() == 'pos':
+           self.controller.data_wavelength = param.value()
+        elif param.name() == 'amp':
+            self.controller.amplitude = param.value()
+        elif param.name() == 'lw':
+            self.controller.width = param.value()
+        elif param.name() == 'noise':
+            self.controller.noise = param.value()
+        else:
+            pass
 
     def ini_detector(self, controller=None):
         """Detector communication initialization
@@ -67,23 +71,26 @@ class DAQ_0DViewer_Photodiode(DAQ_Viewer_base):
             False if initialization failed otherwise True
         """
 
-        raise NotImplementedError  # TODO when writing your own plugin remove this line and modify the one below
         if self.is_master:
-            self.controller = PythonWrapperObjectOfYourInstrument()  #instantiate you driver with whatever arguments are needed
-            self.controller.open_communication() # call eventual methods
-            initialized = self.controller.a_method_or_atttribute_to_check_if_init()  # TODO
+            self.controller = Spectrometer()  #instantiate you driver with whatever arguments are needed
+            initialized = self.controller.open_communication()
+
         else:
             self.controller = controller
             initialized = True
 
-        # TODO for your custom plugin (optional) initialize viewers panel with the future type of data
-        self.dte_signal_temp.emit(DataToExport(name='myplugin',
-                                               data=[DataFromPlugins(name='Mock1',
-                                                                    data=[np.array([0]), np.array([0])],
-                                                                    dim='Data0D',
-                                                                    labels=['Mock1', 'label2'])]))
+        self.settings.child('pos').setValue(self.controller.data_wavelength)
+        self.settings.child('amp').setValue(self.controller.amplitude)
+        self.settings.child('lw').setValue(self.controller.width)
+        self.settings.child('noise').setValue(self.controller.noise)
 
-        info = "Whatever info you want to log"
+        self.dte_signal_temp.emit(DataToExport(name='Photodiode',
+                                               data=[DataFromPlugins(name='MonoIntensity',
+                                                                    data=[np.array([0])],
+                                                                    dim='Data0D',
+                                                                    labels=['Intensity'])]))
+
+        info = "Initialized hehe"
         return info, initialized
 
     def close(self):
