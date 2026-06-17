@@ -25,7 +25,7 @@ class DAQ_Move_Monochromator(DAQ_Move_base):
 
     """
     is_multiaxes = False
-    _axis_names: Union[List[str], Dict[str, int]] = ['Axis1', 'Axis2']
+    _axis_names: Union[List[str], Dict[str, int]] = ['Wavelength']
     _controller_units: Union[str, List[str]] = 'nm'
     _epsilon: Union[float, List[float]] = 0.1
     data_actuator_type = DataActuatorType.DataActuator

@@ -1,7 +1,7 @@
 import numpy as np
 
 from pymodaq_utils.utils import ThreadCommand
-from pymodaq_data.data import DataToExport
+from pymodaq_data.data import DataToExport, Axis
 from pymodaq_gui.parameter import Parameter
 
 from pymodaq.control_modules.viewer_utility_classes import DAQ_Viewer_base, comon_parameters, main
@@ -10,13 +10,13 @@ from pymodaq.utils.data import DataFromPlugins
 from pymodaq_plugins_teaching.hardware.spectrometer import Spectrometer
 
 
-class DAQ_0DViewer_Photodiode(DAQ_Viewer_base):
-    """ Instrument plugin class for a OD viewer.
+class DAQ_1DViewer_Spectro(DAQ_Viewer_base):
+    """ Instrument plugin class for a 1D viewer.
     
     This object inherits all functionalities to communicate with PyMoDAQ’s DAQ_Viewer module through inheritance via
     DAQ_Viewer_base. It makes a bridge between the DAQ_Viewer module and the Python wrapper of a particular instrument.
 
-    flagada
+    coucou
 
     Attributes:
     -----------
@@ -36,7 +36,7 @@ class DAQ_0DViewer_Photodiode(DAQ_Viewer_base):
 
     def ini_attributes(self):
         self.controller: Spectrometer = None
-        pass
+        self.x_axis = None
 
     def commit_settings(self, param: Parameter):
         """Apply the consequences of a change of value in the detector settings
@@ -79,9 +79,8 @@ class DAQ_0DViewer_Photodiode(DAQ_Viewer_base):
         """
 
         if self.is_master:
-            self.controller = Spectrometer()  #instantiate you driver with whatever arguments are needed
+            self.controller = Spectrometer()
             initialized = self.controller.open_communication()
-
         else:
             self.controller = controller
             initialized = True
@@ -91,18 +90,22 @@ class DAQ_0DViewer_Photodiode(DAQ_Viewer_base):
         self.settings.child('lw').setValue(self.controller.width)
         self.settings.child('noise').setValue(self.controller.noise)
 
-        self.dte_signal_temp.emit(DataToExport(name='Photodiode',
-                                               data=[DataFromPlugins(name='MonoIntensity',
-                                                                    data=[np.array([0])],
-                                                                    dim='Data0D',
-                                                                    labels=['Intensity'])]))
+        # get the x_axis (you may want to to this also in the commit settings if x_axis may have changed
+        data_x_axis = self.controller.get_wavelength_axis()  # if possible
+        self.x_axis = Axis(data=data_x_axis, label='Wavelength', units='nm', index=0)
 
-        info = "Initialized hehe"
+        self.dte_signal_temp.emit(DataToExport(name='Spectro',
+                                               data=[DataFromPlugins(name='Spectrum',
+                                                                     data=[np.array([0., 0., ...]),
+                                                                           np.array([0., 0., ...])],
+                                                                     dim='Data1D', labels=['Positive', 'Negative'],
+                                                                     axes=[self.x_axis])]))
+
+        info = "Hihi"
         return info, initialized
 
     def close(self):
         """Terminate the communication protocol"""
-
         if self.is_master:
             self.controller.close_communication()
 
@@ -118,15 +121,19 @@ class DAQ_0DViewer_Photodiode(DAQ_Viewer_base):
             others optionals arguments
         """
 
-        data_tot = self.controller.grab_monochromator()
-        self.dte_signal.emit(DataToExport(name='Photodiode',
-                                          data=[DataFromPlugins(name='MonoIntensity', data=[data_tot, -data_tot],
-                                                                dim='Data0D', labels=['Intensity', 'Mirror'])]))
+        ##synchrone version (blocking function)
+        data_x_axis = self.controller.get_wavelength_axis()  # if possible
+        self.x_axis = Axis(data=data_x_axis, label='Wavelength', units='nm', index=0)
+
+        data_tot = self.controller.grab_spectrum()
+        self.dte_signal.emit(DataToExport('Spectro',
+                                          data=[DataFromPlugins(name='Spectrum', data=[data_tot, -data_tot],
+                                                                dim='Data1D', labels=['Positive', 'Negative'],
+                                                                axes=[self.x_axis])]))
 
     def stop(self):
         """Stop the current grab hardware wise if necessary"""
-        self.emit_status(ThreadCommand('Update_Status', ['Stop en fait']))
-        ##############################
+        self.emit_status(ThreadCommand('Update_Status', ['arrete']))
         return ''
 
 
